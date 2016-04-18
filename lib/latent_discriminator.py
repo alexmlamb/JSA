@@ -1,6 +1,6 @@
 
 
-def init_params_latent_disc(config):
+def init_params_ldisc(config):
 
     params = {}
 

@@ -11,6 +11,8 @@ from DeConvLayer import DeConvLayer
 
 from consider_constant import consider_constant
 
+from latent_discriminator import init_params_ldisc, latent_discriminator
+
 def init_params_encoder(config):
     params = {}
 
@@ -324,6 +326,7 @@ if __name__ == "__main__":
     params_enc = init_params_encoder(config)
     params_dec = init_params_decoder(config)
     params_disc = init_params_disc(config)
+    params_ldisc = init_params_ldisc(config)
 
     params = {}
     params.update(params_enc)
@@ -338,6 +341,10 @@ if __name__ == "__main__":
 
     x_reconstructed = results_map['reconstruction']
     x_sampled = results_map['sample']
+
+    
+
+    ldisc = latent_discriminator(T.concatenate([], axis = 0), params_ldisc, mb_size = config['mb_size'], num_hidden = config['num_hidden'], num_latent = config['num_latent'])
 
     disc_real_D = discriminator(normalize(x), results_map['z'], params_disc, mb_size = config['mb_size'], num_hidden = config['num_hidden'], num_latent = config['num_latent'])
     disc_fake_D = discriminator(x_reconstructed, results_map['z'], params_disc, mb_size = config['mb_size'], num_hidden = config['num_hidden'], num_latent = config['num_latent'])
@@ -355,7 +362,7 @@ if __name__ == "__main__":
 
     inputs = [x]
 
-    outputs = {'loss' : loss, 'vae_loss' : vae_loss, 'rec_loss' : rec_loss, 'reconstruction' : denormalize(x_reconstructed), 'c_real' : disc_real_D['c'], 'c_fake' : disc_fake_D['c'], 'x' : x, 'sample' : denormalize(x_sampled), 'interp' : denormalize(results_map['interp'])}
+    outputs = {'loss' : loss, 'vae_loss' : vae_loss, 'rec_loss' : rec_loss, 'reconstruction' : denormalize(x_reconstructed), 'c_real' : disc_real_D['c'], 'c_fake' : disc_fake_D['c'], 'x' : x, 'sample' : denormalize(x_sampled), 'interp' : denormalize(results_map['interp']), 'ldisc' : }
 
     print "params", params.keys()
     print "params enc", params_enc.keys()
@@ -364,9 +371,11 @@ if __name__ == "__main__":
 
     updates = lasagne.updates.adam(LD_dG, params_dec.values(), learning_rate = 0.001, beta1 = 0.5)
     updates_disc = lasagne.updates.adam(LD_dD + vae_loss, params_disc.values() + params_enc.values(), learning_rate = 0.0001, beta1 = 0.5)
+    updates_ldisc = lasagne.updates.adam(ldisc_dD, params_ldisc.values(), learning_rate = 0.0001, beta1 = 0.5)
 
     train_method = theano.function(inputs = inputs, outputs = outputs, updates = updates)
     disc_method = theano.function(inputs = inputs, outputs = outputs, updates = updates_disc)
+    ldisc_method = theano.function(inputs = inputs, outputs = outputs, updates = updates_ldisc)
     #gen_method = theano.function(inputs = inputs, outputs = outputs, updates = updates_gen)
 
     last_acc = 0.0
