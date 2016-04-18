@@ -22,13 +22,15 @@ def deconv(X, w, subsample=(1, 1), border_mode=(0, 0), conv_mode='conv'):
 
 class DeConvLayer(object):
 
-    def __init__(self, in_channels, out_channels, activation, up_rate, W, b, batch_norm = False):
+    def __init__(self, in_channels, out_channels, activation, W, b,batch_norm = False):
 
-        self.filter_shape = np.asarray((in_channels, out_channels, up_rate * 2 + 1, 1))
+        #self.filter_shape = np.asarray((in_channels, out_channels, kernel_len, kernel_len))
+
+        kernel_len = W.get_value().shape[2]
+        print "kernel len", kernel_len
 
         self.activation = activation
 
-        self.up_rate = up_rate
 
         self.batch_norm = batch_norm
 
@@ -37,7 +39,7 @@ class DeConvLayer(object):
 
     def output(self, input):
 
-        conv_out = deconv(input, self.W, subsample=(self.up_rate, 1), border_mode=(self.up_rate,0))
+        conv_out = deconv(input, self.W, subsample=(2,2), border_mode=(2,2))
 
 
         if self.batch_norm:
@@ -59,25 +61,6 @@ class DeConvLayer(object):
 
 
 
-if __name__ == "__main__":
-
-    x = T.tensor4()
-
-    u = 20
-
-    W = theano.shared(np.random.normal(size = (1, 10, u * 2 + 1, 1)).astype('float32'))
-    b = theano.shared(np.random.normal(size = (10)).astype('float32'))
-
-    dc = DeConvLayer(in_channels = 1, out_channels = 10, activation = None, W = W, b = b, up_rate = u)
-
-    x_gen = np.ones(shape = (32, 1, 200, 1)).astype('float32')
-
-    print "compiling"
-
-    f = theano.function([x], dc.output(x))
-
-    val = f(x_gen)
-    print val.shape
 
 
 

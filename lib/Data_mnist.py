@@ -33,16 +33,17 @@ class Data:
     '''
     def getBatch(self):
         startingPoint = random.randint(0, self.train_X.shape[0] - self.mb_size - 1)
-        return self.train_X[startingPoint : startingPoint + self.mb_size,:].reshape(self.mb_size, 28, 28)
+        return self.train_X[startingPoint : startingPoint + self.mb_size,:].reshape(self.mb_size, 1, 28, 28)
 
     def saveExample(self, x_gen, name):
 
-        assert x_gen.ndim == 2
+        assert x_gen.ndim == 3
+
+        x_gen = np.clip(x_gen, 0.01, 0.99)
 
         imgLoc = "plots/" + name + ".png"
 
-        scipy.misc.imsave(imgLoc, x_gen)
-
+        scipy.misc.imsave(imgLoc, x_gen[0])
 
 if __name__ == "__main__":
     d = Data(mb_size = 2)
@@ -53,4 +54,5 @@ if __name__ == "__main__":
 
     d.saveExample(x[0], name = 'derp')
 
+    print x.tolist()
 
